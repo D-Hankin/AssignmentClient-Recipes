@@ -1,47 +1,93 @@
-const randomRecipeContainer = document.getElementById("randomRecipeContainer");
+
 //const userRecipeContainer = document.getElementById("userRecipeContainer");
-const randomRecipeOption1Container = document.getElementById("randomRecipeOption1Container");
-const randomRecipeOption2Container = document.getElementById("randomRecipeOption2Container");
-const randomRecipeOption3Container = document.getElementById("randomRecipeOption3Container");
+
 const contentContainer = document.getElementById("contentContainer");
 const home = document.getElementById("home");
 
-homepage();
+loadRandomRecipes();
 
-home.addEventListener("click", () => {
-    homepage();
+home.addEventListener("click", async () => {
+    contentContainer.innerHTML="";
+    loadRandomRecipes();
+    console.log("homepage");
 })
 
-function homepage() {
-    contentContainer.innerHTML= "";
-
-    randomRecipe(randomRecipeContainer);
-    randomRecipe(randomRecipeOption1Container);
-    randomRecipe(randomRecipeOption2Container);
-    randomRecipe(randomRecipeOption3Container);
+async function loadRandomRecipes() {
+    let randomRecipeContainer = document.createElement("div");
+    let randomRecipeOptionsContainer = document.createElement("div");
+    randomRecipeContainer.appendChild(randomRecipeOptionsContainer);
+    contentContainer.appendChild(randomRecipeContainer);
+    
+    await randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer);
+    await randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer);
+    await randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer);
+    await randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer);
 }
 
-function randomRecipe(container) {
+function randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer) {
     
     fetch("https://www.themealdb.com/api/json/v1/1/random.php")
     .then(res => res.json())
     .then(data => {
         console.log(data);
-    
+        
+        let recipeNameContainer = document.createElement("div");
         let recipeName = document.createElement("h2");
         recipeName.innerText = data.meals[0].strMeal;
-        console.log(data.meals[0].strMeal);
-        container.appendChild(recipeName);
-        let recipeImage = document.createElement("img");
-        recipeImage.src= data.meals[0].strMealThumb;
+        recipeName.style.cursor = "pointer";
+        recipeNameContainer.appendChild(recipeName);
 
-        recipeImage.addEventListener("click", () => {
-            contentContainer.innerHTML = "";
-            contentContainer.appendChild(recipeName);
+        //console.log(data.meals[0].strMeal);
+        let recipeImageContainer = document.createElement("div");
+        let recipeImage = document.createElement("img");
+        recipeImage.style.cursor = "pointer";
+        recipeImage.src = data.meals[0].strMealThumb;
+        recipeImage.id = data.meals[0].idMeal; 
+        recipeImageContainer.appendChild(recipeImage);
+        
+        recipeName.addEventListener("click", () => {
+            toMeal(recipeName, recipeImage, data);
         })
 
-        container.appendChild(recipeImage);
+        recipeImage.addEventListener("click", ()=> {
+            toMeal(recipeName, recipeImage, data)
+        });
+        
+        //console.log(recipeName.innerText + " loading complete");
+        
+        if(randomRecipeContainer.innerHTML != "") {
+            randomRecipeContainer.append(recipeNameContainer, recipeImageContainer);
+        } else {
+            randomRecipeOptionsContainer.append(recipeNameContainer, recipeImageContainer);
+        }
     })
+}
+
+async function toMeal(recipeName, recipeImage, data) {
+
+    contentContainer.innerHTML="";
+    recipeName.style.cursor = "";
+    recipeImage.style.cursor = "";
+    let recipeNameContainer = document.createElement("div");
+    recipeNameContainer.appendChild(recipeName);
+    let recipeImageContainer = document.createElement("div");
+    recipeImageContainer.appendChild(recipeImage);
+    let recipeInstructionsContainer = document.createElement("div");
+    let recipeInstructions = document.createElement("p");
+    recipeInstructions.innerText = data.meals[0].strInstructions;
+    recipeImageContainer.appendChild(recipeInstructions);
+    let recipeSourceContainer = document.createElement("div");
+    let recipeSource = document.createElement("p");
+
+    if (data.meals[0].strSource == null || data.meals[0].strSource == "") {
+        recipeSource.innerText = "Source: No source available.";
+    } else {
+        recipeSource.innerText = "Source: " + data.meals[0].strSource;
+    }
+
+    recipeSource.style.fontStyle = "italic";
+    recipeSourceContainer.appendChild(recipeSource) 
+    contentContainer.append(recipeNameContainer, recipeImageContainer, recipeInstructionsContainer, recipeSourceContainer);
 }
 
 
