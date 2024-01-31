@@ -7,24 +7,31 @@
     <script src="static/script.js" defer></script>
     <title>Dinner Time</title>
 </head>
-<body>
-    <div id="headerContainer"></div>
-    <div id="nav">
-        <nav>
-            <img src="">
-        </nav>
+<body id="body">
+    <div id="headerContainer">
+        <div id="nav">
+            <nav>
+                <img id="menu" src="static/images/hamburgerMenu.png">
+                <dialog id="menuDialog"></dialog>
+                <img id="home" src="static/images/home.png">
+            </nav>
+        </div>
+        <div id="registerLoginContainer">
+            <button id="register">Register</button>
+            <button id="login">Log in</button>
+            <dialog id="registerLoginPopUp"></dialog>
+        </div>
     </div>
-    <div id="registerLoginContainer">
-        <button id="register">Register</button>
-        <button id="login">Log in</button>
-        <dialog id="registerLoginPopUp"></dialog>
-    </div>
-    <h1>Dinner Time</h1>
-    <div id="randomRecipeContainer">
-
-    </div>
-    <div id="userRecipeContainer">
-
+    <div id="contentContainer">
+        <h1>Dinner Time</h1>
+        <div id="randomRecipeContainer">
+    
+        </div>
+        <div id="randomRecipeOptionsContainer">
+            <div id="randomRecipeOption1Container"></div>
+            <div id="randomRecipeOption2Container"></div>
+            <div id="randomRecipeOption3Container"></div>
+        </div>
     </div>
 </body>
 </html>
