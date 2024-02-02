@@ -10,6 +10,8 @@ const registerLoginPopUp = document.getElementById("registerLoginPopUp");
 const registerBtn = document.getElementById("registerBtn");
 const recipeDialog = document.getElementById("recipeDialog");
 const myRecipesBtnConatainer = document.getElementById("myRecipesBtnContainer");
+const searchInput = document.getElementById("searchInput");
+const searchBtn = document.getElementById("searchBtn");
 
 let recipeImages = []; 
 let currentUserId = localStorage.getItem("current_user");
@@ -34,6 +36,53 @@ home.addEventListener("click", async () => {
     
     if (currentUserId != 0) {
         createHeartImage(recipeImages, currentUserId);
+    }
+})
+
+searchBtn.addEventListener("click", async () => {
+    if (searchInput.value.trim() != "") {
+        contentContainer.innerHTML = "";
+        let searchResultsHeader = document.createElement("h2");
+        searchResultsHeader.innerText = "Search Results";
+        let searchResultsList = document.createElement("ul");
+
+        await fetch("https://www.themealdb.com/api/json/v1/1/search.php?f=" + searchInput.value)
+        .then(res => res.json())
+        .then(data => {
+            console.log(data);
+            data.meals.forEach(recipe => {
+                let li = document.createElement("li");
+                    li.innerText = recipe.strMeal;
+                    li.style.cursor = "pointer";
+                    searchResultsList.appendChild(li);
+                    let recipeNameContainer = document.createElement("div");
+                    let recipeName = document.createElement("h2");
+                    recipeName.innerText = recipe.strMeal;
+                    recipeName.style.cursor = "pointer";
+                    recipeName.style.textAlign = "center";
+                    recipeNameContainer.appendChild(recipeName);
+                    let recipeImageContainer = document.createElement("div");
+                    recipeImageContainer.id = "RecipeDiv" + recipe.idMeal; 
+                    recipeImageContainer.style.position = "relative";
+                    recipeImageContainer.style.textAlign = "center";
+                    recipeImageContainer.style.width = "100vw";
+                    let recipeImage = document.createElement("img");
+                    recipeImage.style.cursor = "pointer";
+                    recipeImage.style.width = "50%";
+                    recipeImage.src = recipe.strMealThumb;
+                    recipeImage.id = recipe.idMeal; 
+                    recipeImages.push(recipeImage);
+                    recipeImageContainer.appendChild(recipeImage);
+                    console.log(recipeName);
+                    let alreadyLiked = false;
+                    li.addEventListener("click", () => toMeal(alreadyLiked, recipeName, recipeImage, data, localStorage.getItem("currwent_user")));
+            })
+        })
+
+        contentContainer.append(searchResultsHeader, searchResultsList);
+        searchInput.value = "";
+
+
     }
 })
 
@@ -144,7 +193,7 @@ async function toMeal(alreadyLiked, recipeName, recipeImage, data, currentUserId
                             data.meals[0].strMeasure17 + " " + data.meals[0].strIngredient17, data.meals[0].strMeasure18 + " " + data.meals[0].strIngredient18, 
                             data.meals[0].strMeasure19 + " " + data.meals[0].strIngredient19, data.meals[0].strMeasure20 + " " + data.meals[0].strIngredient20];
     for(let i = 0; i <ingredientsArray.length; i++) {
-        if (ingredientsArray[i].trim() != "") {
+        if (ingredientsArray[i].trim() != "" && ingredientsArray[i] != "null null") {
             let li = document.createElement("li");
             li.innerText = ingredientsArray[i];
             recipeIngredientsList.appendChild(li);
