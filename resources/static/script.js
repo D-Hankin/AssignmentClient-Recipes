@@ -11,9 +11,8 @@ const registerBtn = document.getElementById("registerBtn");
 
 let recipeImages = []; 
 let currentUserId = localStorage.getItem("current_user");
-console.log("Start: " + currentUserId);
+
 if (typeof currentUserId != "undefined" && currentUserId != 0) {
-    console.log(currentUserId);
     createLogout(currentUserId);
     loadRandomRecipes(currentUserId);
 } else {
@@ -22,20 +21,21 @@ if (typeof currentUserId != "undefined" && currentUserId != 0) {
     createRegister();
 }
 
-
-
-
 home.addEventListener("click", async () => {
+
     contentContainer.innerHTML="";
     registerLoginPopUp.removeAttribute("open");
-    loadRandomRecipes(currentUserId);
+    currentUserId = localStorage.getItem("current_user");
     console.log("home: " + currentUserId);
+    loadRandomRecipes(currentUserId);
+    
     if (currentUserId != 0) {
         createHeartImage(recipeImages, currentUserId);
     }
 })
 
 async function loadRandomRecipes(currentUserId) {
+
     let randomRecipeContainer = document.createElement("div");
     let randomRecipeOptionsContainer = document.createElement("div");
     let recipeSuggestions = document.createElement("h2");
@@ -50,21 +50,16 @@ async function loadRandomRecipes(currentUserId) {
 }
 
 async function randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer, currentUserId) {
-    
-    console.log("Random: " + currentUserId);
+
     fetch("https://www.themealdb.com/api/json/v1/1/random.php")
     .then(res => res.json())
-    .then(data => {
-        console.log(data);
-
-        
+    .then(data => {        
         let recipeNameContainer = document.createElement("div");
         let recipeName = document.createElement("h2");
         recipeName.innerText = data.meals[0].strMeal;
         recipeName.style.cursor = "pointer";
         recipeName.style.textAlign = "center";
         recipeNameContainer.appendChild(recipeName);
-        
         let recipeImageContainer = document.createElement("div");
         recipeImageContainer.id = "RecipeDiv" + data.meals[0].idMeal; 
         recipeImageContainer.style.position = "relative";
@@ -77,11 +72,11 @@ async function randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer,
         recipeImage.id = data.meals[0].idMeal; 
         recipeImages.push(recipeImage);
         recipeImageContainer.appendChild(recipeImage);
+        console.log(data);
         
         if (currentUserId != 0 && typeof currentUserId !== "undefined") {
             createHeartImage(recipeImage, currentUserId);
         }
-        
         
         recipeName.addEventListener("click", () => {
             toMeal(recipeName, recipeImage, data, currentUserId);
@@ -114,6 +109,7 @@ async function toMeal(recipeName, recipeImage, data, currentUserId) {
 
     let recipeNameContainer = document.createElement("div");
     recipeNameContainer.appendChild(recipeName);
+
     let recipeImageContainer = document.createElement("div");
     recipeImageContainer.style.position = "relative";
     recipeImageContainer.style.textAlign = "center";
@@ -121,12 +117,37 @@ async function toMeal(recipeName, recipeImage, data, currentUserId) {
     recipeImage.style.width = "50%";
     recipeImageContainer.style.position = "relative";
     recipeImageContainer.append(recipeImage);
+
+    let recipeIngredientsContainer = document.createElement("div");
+    recipeIngredientsContainer.style.width = "95vw";
+    let recipeIngredientsList = document.createElement("ul")
+    let ingredientsArray = [data.meals[0].strMeasure1 + " " + data.meals[0].strIngredient1, data.meals[0].strMeasure2 + " " + data.meals[0].strIngredient2, 
+                            data.meals[0].strMeasure3 + " " + data.meals[0].strIngredient3, data.meals[0].strMeasure4 + " " + data.meals[0].strIngredient4, 
+                            data.meals[0].strMeasure5 + " " + data.meals[0].strIngredient5, data.meals[0].strMeasure6 + " " + data.meals[0].strIngredient6, 
+                            data.meals[0].strMeasure7 + " " + data.meals[0].strIngredient7, data.meals[0].strMeasure8 + " " + data.meals[0].strIngredient8, 
+                            data.meals[0].strMeasure9 + " " + data.meals[0].strIngredient9, data.meals[0].strMeasure10 + " " + data.meals[0].strIngredient10, 
+                            data.meals[0].strMeasure11 + " " + data.meals[0].strIngredient11, data.meals[0].strMeasure12 + " " + data.meals[0].strIngredient12, 
+                            data.meals[0].strMeasure13 + " " + data.meals[0].strIngredient13, data.meals[0].strMeasure14 + " " + data.meals[0].strIngredient14, 
+                            data.meals[0].strMeasure15 + " " + data.meals[0].strIngredient15, data.meals[0].strMeasure16 + " " + data.meals[0].strIngredient16, 
+                            data.meals[0].strMeasure17 + " " + data.meals[0].strIngredient17, data.meals[0].strMeasure18 + " " + data.meals[0].strIngredient18, 
+                            data.meals[0].strMeasure19 + " " + data.meals[0].strIngredient19, data.meals[0].strMeasure20 + " " + data.meals[0].strIngredient20];
+    for(let i = 0; i <ingredientsArray.length; i++) {
+        if (ingredientsArray[i].trim() != "") {
+            let li = document.createElement("li");
+            li.innerText = ingredientsArray[i];
+            recipeIngredientsList.appendChild(li);
+        }
+    }
+    recipeIngredientsContainer.appendChild(recipeIngredientsList);
+    recipeIngredientsContainer.style.textAlign = "left";
+
     let recipeInstructionsContainer = document.createElement("div");
     recipeInstructionsContainer.style.width = "95vw";
     let recipeInstructions = document.createElement("p");
     recipeInstructions.innerText = data.meals[0].strInstructions;
     recipeInstructions.style.width = "95%";
-    recipeImageContainer.appendChild(recipeInstructions);
+
+    recipeInstructionsContainer.appendChild(recipeInstructions);
     let recipeSourceContainer = document.createElement("div");
     let recipeSource = document.createElement("p");
     
@@ -138,8 +159,9 @@ async function toMeal(recipeName, recipeImage, data, currentUserId) {
 
     recipeSource.style.fontStyle = "italic";
     recipeSourceContainer.appendChild(recipeSource) 
-    contentContainer.append(recipeNameContainer, recipeImageContainer, recipeInstructionsContainer, recipeSourceContainer);
-    console.log("to meal: " + currentUserId);
+    contentContainer.append(recipeNameContainer, recipeImageContainer, recipeIngredientsContainer, recipeInstructionsContainer, recipeSourceContainer);
+    currentUserId = localStorage.getItem("current_user");
+    console.log(currentUserId);
     if(currentUserId != 0) {
         createHeartImage(recipeImage, currentUserId);
     }
@@ -184,20 +206,22 @@ function createLogout(currentUserId) {
     let loginBtn = document.createElement("button");
     loginBtn.innerText = "Log out"
     logBtnContainer.appendChild(loginBtn);
-    currentUserId = 0;
     
     loginBtn.addEventListener("click", () => {
-        console.log("click logout")
+        currentUserId = 0;
         fetch("http://localhost:8080/custom-logout", {
             mode: "no-cors",
             method: "POST",
             credentials: "include"
         })
         
-        isLoggedIn = false;
-        console.log("logout");
         registerLoginPopUp.removeAttribute("open");
         localStorage.setItem("current_user", 0);
+        let removeHearts = document.querySelectorAll("[id*='heart']");
+        removeHearts.forEach(function(heart) {
+            heart.parentElement.removeChild(heart);
+        });
+
         createLogin();
         createRegister();
     });
@@ -244,12 +268,13 @@ function createRegister() {
         let registerFormSubmit = document.createElement("button");
         registerFormSubmit.type = "button";
         registerFormSubmit.innerText = "Register";
-        registerForm.append(registerFormUsername, registerFormPassword, registerFormReEnterPassword, registerFormFirstName, registerFormLastName, registerFormEmail, registerFormSubmit);
+        registerForm.append(registerFormUsername, registerFormPassword, registerFormReEnterPassword, registerFormFirstName, registerFormLastName, registerFormEmail, 
+            registerFormSubmit);
         registerLoginPopUp.appendChild(registerForm);
         registerLoginPopUp.setAttribute("open", "true");
     
-        registerFormSubmit.addEventListener("click", () => registerFormSubmitEventListener(registerFormUsername, registerFormPassword, registerFormReEnterPassword, registerFormFirstName, 
-            registerFormLastName, registerFormEmail));
+        registerFormSubmit.addEventListener("click", () => registerFormSubmitEventListener(registerLoginPopUp, registerFormUsername, registerFormPassword, registerFormReEnterPassword, 
+            registerFormFirstName, registerFormLastName, registerFormEmail));
     })
 }
 
@@ -273,7 +298,6 @@ async function loginFormSubmitEventListener(loginFormUsername, loginFormPassword
                 .then(data => {
                     if (!data.error) {
                         currentUserId = data.id;
-                        console.log(currentUserId);
                         localStorage.setItem("current_user", currentUserId);
                         createHeartImage(recipeImages, currentUserId);
                         createLogout();
@@ -283,8 +307,7 @@ async function loginFormSubmitEventListener(loginFormUsername, loginFormPassword
                 })
             } catch {
                 alert("Something went wrong. Please try again");
-            }
-            
+            }  
         } else {
             alert("Please enter a username and password");
         }
@@ -294,8 +317,6 @@ async function loginFormSubmitEventListener(loginFormUsername, loginFormPassword
 function createHeartImage(recipeImages, currentUserId) {
 
     if (Array.isArray(recipeImages)) {
-
-        console.log(currentUserId);
         recipeImages.forEach(recipeImage => {
             let heartImage = document.createElement("img");
                 heartImage.src = "/resources/static/images/heartEmpty.png";
@@ -309,7 +330,6 @@ function createHeartImage(recipeImages, currentUserId) {
                 recipeImage.parentElement.appendChild(heartImage);
             })
         } else {
-            
             let heartImage = document.createElement("img");
             heartImage.src = "/resources/static/images/heartEmpty.png";
             heartImage.style.position = "absolute";
@@ -321,8 +341,7 @@ function createHeartImage(recipeImages, currentUserId) {
             heartImage.id = "heart" + recipeImages.id;
             recipeImages.parentElement.appendChild(heartImage);
             heartImage.addEventListener("click", () => heartImageEventListener(heartImage, currentUserId));
-    }
-        
+    }  
 }
 
 function heartImageEventListener(heartImage, currentUserId) {
@@ -348,7 +367,7 @@ function heartImageEventListener(heartImage, currentUserId) {
                     alert(data)
                 })
             } catch {
-                alert("Something went wrong")
+                alert("Something went wrong");
             }
         }
     } else {
@@ -361,17 +380,16 @@ function heartImageEventListener(heartImage, currentUserId) {
             })
             .then(res => res.text())
             .then(data => {
-                console.log(data);
                 alert(data);
                 heartImage.src = "/resources/static/images/heartEmpty.png";
             })
         } catch {
-            console.log("red");
+            alert("Something went wrong");
         }
     }
 }
 
-async function registerFormSubmitEventListener(registerFormUsername, registerFormPassword, registerFormReEnterPassword, registerFormFirstName, 
+async function registerFormSubmitEventListener(registerLoginPopUp, registerFormUsername, registerFormPassword, registerFormReEnterPassword, registerFormFirstName, 
     registerFormLastName, registerFormEmail) {
 
         let usernameTaken = false;
@@ -379,16 +397,14 @@ async function registerFormSubmitEventListener(registerFormUsername, registerFor
         if (registerFormPassword.value == registerFormReEnterPassword.value) {
 
             if (/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(registerFormEmail.value) && registerFormUsername.value.trim() != "" && registerFormFirstName.value.trim() != ""
-                 && registerFormLastName.value.trim() != "" && registerFormPassword.value.trim() != "") {
+                    && registerFormLastName.value.trim() != "" && registerFormPassword.value.trim() != "") {
+
                 fetch("http://localhost:8080/users")
                 .then(res => res.json())
                 .then(data => {
-                    console.log(data);
-                    console.log(registerFormUsername.value);
                     for(let i = 0; i < data.length; i++) {
                         if (registerFormUsername.value == data[i].username) {
-                            console.log(data[i].username);
-                            registerFormUsername.value = ""
+                            registerFormUsername.value = "";
                             registerFormPassword.value = "";
                             registerFormReEnterPassword.value = "";
                             usernameTaken = true;
@@ -413,7 +429,16 @@ async function registerFormSubmitEventListener(registerFormUsername, registerFor
                             })
                             .then(res => res.json())
                             .then(data => {
-                                console.log(data)
+                                if (!data.error) {
+                                    alert("You have successfully registeered an account!")
+                                    registerFormPassword.value = "";
+                                    registerFormReEnterPassword.value = "";
+                                    registerFormUsername.value = "";
+                                    registerFormFirstName.value = "";
+                                    registerFormLastName.value = "";
+                                    registerFormEmail.value = "";
+                                    registerLoginPopUp.removeAttribute("open");
+                                }
                             })
                         } catch {
                             alert("Something went wrong, please try again");
@@ -430,5 +455,4 @@ async function registerFormSubmitEventListener(registerFormUsername, registerFor
             registerFormPassword.value = "";
             registerFormReEnterPassword.value = "";
         }
-
     }
