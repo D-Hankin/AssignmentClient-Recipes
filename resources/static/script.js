@@ -56,7 +56,8 @@ async function randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer,
 
     fetch("https://www.themealdb.com/api/json/v1/1/random.php")
     .then(res => res.json())
-    .then(data => {        
+    .then(data => {
+           
         let recipeNameContainer = document.createElement("div");
         let recipeName = document.createElement("h2");
         recipeName.innerText = data.meals[0].strMeal;
@@ -79,15 +80,18 @@ async function randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer,
         
         currentUserId = localStorage.getItem("current_user");
         if (currentUserId != 0 && typeof currentUserId !== "undefined") {
-            createHeartImage(recipeImage);
+            let alreadyLiked = false;
+            createHeartImage(alreadyLiked, recipeImage);
         }
         
         recipeName.addEventListener("click", () => {
-            toMeal(recipeName, recipeImage, data);
+            let alreadyLiked = false;
+            toMeal(alreadyLiked, recipeName, recipeImage, data);
         })
 
         recipeImage.addEventListener("click", ()=> {
-            toMeal(recipeName, recipeImage, data)
+            let alreadyLiked = false; 
+            toMeal(alreadyLiked, recipeName, recipeImage, data)
         });
         
         if(randomRecipeContainer.innerHTML != "") {
@@ -98,11 +102,16 @@ async function randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer,
     })
 }
 
-async function toMeal(recipeName, recipeImage, data, currentUserId) {
+async function toMeal(alreadyLiked, recipeName, recipeImage, data, currentUserId) {
 
+    console.log(recipeName, recipeImage, data, localStorage.getItem("current_user"))
     contentContainer.innerHTML="";
-    recipeName.style.cursor = "";
-    recipeImage.style.cursor = "";
+    if (recipeName && typeof recipeName.style.cursor !== "undefined") {
+        recipeName.style.cursor = "";
+    }
+    if (recipeImage && typeof recipeImage.style.cursor !== "undefined") {
+        recipeImage.style.cursor = "";
+    }
 
     window.scrollTo({
         top: 0,
@@ -166,9 +175,7 @@ async function toMeal(recipeName, recipeImage, data, currentUserId) {
     contentContainer.append(recipeNameContainer, recipeImageContainer, recipeIngredientsContainer, recipeInstructionsContainer, recipeSourceContainer);
     currentUserId = localStorage.getItem("current_user");
     console.log(currentUserId);
-    if(currentUserId != 0) {
-        createHeartImage(recipeImage, currentUserId);
-    }
+        createHeartImage(alreadyLiked, recipeImage, currentUserId);
 }
 
 function createLogin() {
@@ -323,11 +330,24 @@ async function loginFormSubmitEventListener(loginFormUsername, loginFormPassword
     }
 }
 
-function createHeartImage(recipeImages) {
+function createHeartImage(alreadyLiked, recipeImages) {
 
-    if (Array.isArray(recipeImages)) {
-        recipeImages.forEach(recipeImage => {
-            let heartImage = document.createElement("img");
+    if (alreadyLiked == false) {
+        if (Array.isArray(recipeImages)) {
+            recipeImages.forEach(recipeImage => {
+                let heartImage = document.createElement("img");
+                    heartImage.src = "/resources/static/images/heartEmpty.png";
+                    heartImage.style.position = "absolute";
+                    heartImage.style.top = "1%";
+                    heartImage.style.right = "27%";
+                    heartImage.style.width = "50px";
+                    heartImage.style.height = "50px";
+                    heartImage.style.zIndex = "2";
+                    heartImage.id = "heart" + recipeImage.id;
+                    recipeImage.parentElement.appendChild(heartImage);
+                })
+            } else {
+                let heartImage = document.createElement("img");
                 heartImage.src = "/resources/static/images/heartEmpty.png";
                 heartImage.style.position = "absolute";
                 heartImage.style.top = "1%";
@@ -335,22 +355,38 @@ function createHeartImage(recipeImages) {
                 heartImage.style.width = "50px";
                 heartImage.style.height = "50px";
                 heartImage.style.zIndex = "2";
-                heartImage.id = "heart" + recipeImage.id;
-                recipeImage.parentElement.appendChild(heartImage);
-            })
-        } else {
-            let heartImage = document.createElement("img");
-            heartImage.src = "/resources/static/images/heartEmpty.png";
-            heartImage.style.position = "absolute";
-            heartImage.style.top = "1%";
-            heartImage.style.right = "27%";
-            heartImage.style.width = "50px";
-            heartImage.style.height = "50px";
-            heartImage.style.zIndex = "2";
-            heartImage.id = "heart" + recipeImages.id;
-            recipeImages.parentElement.appendChild(heartImage);
-            heartImage.addEventListener("click", () => heartImageEventListener(heartImage));
-    }  
+                heartImage.id = "heart" + recipeImages.id;
+                recipeImages.parentElement.appendChild(heartImage);
+                heartImage.addEventListener("click", () => heartImageEventListener(heartImage));
+        }  
+    } else {
+        if (Array.isArray(recipeImages)) {
+            recipeImages.forEach(recipeImage => {
+                let heartImage = document.createElement("img");
+                    heartImage.src = "/resources/static/images/heartRed.png";
+                    heartImage.style.position = "absolute";
+                    heartImage.style.top = "1%";
+                    heartImage.style.right = "27%";
+                    heartImage.style.width = "50px";
+                    heartImage.style.height = "50px";
+                    heartImage.style.zIndex = "2";
+                    heartImage.id = "heart" + recipeImage.id;
+                    recipeImage.parentElement.appendChild(heartImage);
+                })
+            } else {
+                let heartImage = document.createElement("img");
+                heartImage.src = "/resources/static/images/heartRed.png";
+                heartImage.style.position = "absolute";
+                heartImage.style.top = "1%";
+                heartImage.style.right = "27%";
+                heartImage.style.width = "50px";
+                heartImage.style.height = "50px";
+                heartImage.style.zIndex = "2";
+                heartImage.id = "heart" + recipeImages.id;
+                recipeImages.parentElement.appendChild(heartImage);
+                heartImage.addEventListener("click", () => heartImageEventListener(heartImage));
+            }
+    }
 }
 
 function heartImageEventListener(heartImage) {
@@ -553,7 +589,59 @@ async function myRecipesBtnEventListener() {
     divider.style.height = "20px";
     divider.style.backgroundColor = "black";
 
-    contentContainer.append(myRecipesHeaderContainer, addNewRecipeContainer, myRecipesContainer, divider);
+    let likedRecipesContainer = document.createElement("div");
+    let likedRecipesHeader = document.createElement("h2");
+    likedRecipesHeader.innerText = "My Liked Recipes";
+    let likedRecipesList = document.createElement("ul");
+
+    fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/liked-recipes")
+    .then(res => res.json())
+    .then(data => {
+        if (data.length == 0) {
+            let noRecipes = document.createElement("h3");
+            noRecipes.innerText = "You don't currently have any liked recipes.";
+            likedRecipesContainer.appendChild(noRecipes);
+        } else {
+            data.forEach(recipe => {
+                console.log(recipe);
+                fetch("https://www.themealdb.com/api/json/v1/1/lookup.php?i=" + recipe.recipeNumber) 
+                .then(res => res.json())
+                .then(data1 => {
+                    console.log(data1);
+                    let li = document.createElement("li");
+                    li.innerText = data1.meals[0].strMeal;
+                    li.style.cursor = "pointer";
+                    likedRecipesList.appendChild(li);
+                    let recipeNameContainer = document.createElement("div");
+                    let recipeName = document.createElement("h2");
+                    recipeName.innerText = data1.meals[0].strMeal;
+                    recipeName.style.cursor = "pointer";
+                    recipeName.style.textAlign = "center";
+                    recipeNameContainer.appendChild(recipeName);
+                    let recipeImageContainer = document.createElement("div");
+                    recipeImageContainer.id = "RecipeDiv" + data1.meals[0].idMeal; 
+                    recipeImageContainer.style.position = "relative";
+                    recipeImageContainer.style.textAlign = "center";
+                    recipeImageContainer.style.width = "100vw";
+                    let recipeImage = document.createElement("img");
+                    recipeImage.style.cursor = "pointer";
+                    recipeImage.style.width = "50%";
+                    recipeImage.src = data1.meals[0].strMealThumb;
+                    recipeImage.id = data1.meals[0].idMeal; 
+                    recipeImages.push(recipeImage);
+                    recipeImageContainer.appendChild(recipeImage);
+                    console.log(recipeName);
+                    let alreadyLiked = true;
+                    li.addEventListener("click", () => toMeal(alreadyLiked, recipeName, recipeImage, data1, localStorage.getItem("current_user")))
+                })
+            
+            })
+        }
+    })
+
+    likedRecipesContainer.append(likedRecipesHeader, likedRecipesList);
+
+    contentContainer.append(myRecipesHeaderContainer, addNewRecipeContainer, myRecipesContainer, divider, likedRecipesContainer);
 }
 
 function addNewRecipeBtnEventListener(event, recipeName, method) {
