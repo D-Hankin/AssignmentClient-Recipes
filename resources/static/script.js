@@ -533,7 +533,7 @@ function addNewRecipeBtnEventListerner() {
     newRecipeDialog.setAttribute("open", true);
     contentContainer.appendChild(newRecipeDialog);
     
-    submitRecipeBtn.addEventListener("click", () => submitRecipeBtnEventListener(newRecipeForm, newRecipeFormName, newRecipeMethod));
+    submitRecipeBtn.addEventListener("click", () => submitRecipeBtnEventListener(newRecipeFormName, newRecipeMethod, newRecipeDialog));
 }
 
 function newIngredientBtnEventListener(ingredientDiv) {
@@ -553,7 +553,7 @@ function newIngredientBtnEventListener(ingredientDiv) {
     }
 }
 
-function submitRecipeBtnEventListener(newRecipeForm, newRecipeFormName, newRecipeMethod) {
+function submitRecipeBtnEventListener(newRecipeFormName, newRecipeMethod, newRecipeDialog) {
     
     if (newRecipeFormName.value.trim() != "" && newRecipeMethod.value.trim() != "") {
         let ingredients = document.getElementsByName("ingredient");
@@ -574,16 +574,12 @@ function submitRecipeBtnEventListener(newRecipeForm, newRecipeFormName, newRecip
                 recipeName: newRecipeFormName.value,
                 ingredients: ingredientsArray,
                 recipeMethod : newRecipeMethod.value
-
-                // userId : "123456",
-                // recipeName: "Moose",
-                // ingredients: ["a", "b"],
-                // recipeMethod : "Poo"
             })
         })
         .then(res => res.json())
         .then(data => {
-            console.log(data)
+            newRecipeDialog.innerHTML = "";
+            newRecipeDialog.removeAttribute("open");
         })       
     }
 }
