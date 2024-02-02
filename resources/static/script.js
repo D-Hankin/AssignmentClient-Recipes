@@ -8,6 +8,8 @@ const home = document.getElementById("home");
 const registerLoginContainer = document.getElementById("registerLoginContainer");
 const registerLoginPopUp = document.getElementById("registerLoginPopUp");
 const registerBtn = document.getElementById("registerBtn");
+const recipeDialog = document.getElementById("recipeDialog");
+const myRecipesBtnConatainer = document.getElementById("myRecipesBtnContainer");
 
 let recipeImages = []; 
 let currentUserId = localStorage.getItem("current_user");
@@ -75,16 +77,17 @@ async function randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer,
         recipeImageContainer.appendChild(recipeImage);
         console.log(data);
         
+        currentUserId = localStorage.getItem("current_user");
         if (currentUserId != 0 && typeof currentUserId !== "undefined") {
-            createHeartImage(recipeImage, currentUserId);
+            createHeartImage(recipeImage);
         }
         
         recipeName.addEventListener("click", () => {
-            toMeal(recipeName, recipeImage, data, currentUserId);
+            toMeal(recipeName, recipeImage, data);
         })
 
         recipeImage.addEventListener("click", ()=> {
-            toMeal(recipeName, recipeImage, data, currentUserId)
+            toMeal(recipeName, recipeImage, data)
         });
         
         if(randomRecipeContainer.innerHTML != "") {
@@ -194,13 +197,13 @@ function createLogin() {
         loginFormSubmit.innerText = "Log in";
         loginForm.append(loginFormUsername, loginFormPassword, loginFormSubmit);
         registerLoginPopUp.appendChild(loginForm);
-        registerLoginPopUp.setAttribute("open", "true");
+        registerLoginPopUp.setAttribute("open", true);
 
-        loginFormSubmitEventListener(loginFormUsername, loginFormPassword, loginFormSubmit);
+        loginFormSubmit.addEventListener("click", () => loginFormSubmitEventListener(loginFormUsername, loginFormPassword));
     })
 }
 
-function createLogout(currentUserId) {
+function createLogout() {
 
     registerBtnContainer.innerHTML = "";
     logBtnContainer.innerHTML = "";
@@ -216,13 +219,18 @@ function createLogout(currentUserId) {
             credentials: "include"
         })
         
+        let myBtn = document.getElementById("myRecipesBtn");
+        if (myBtn) {
+            myBtn.parentElement.removeChild(document.getElementById("myRecipesBtn"));
+        }
         registerLoginPopUp.removeAttribute("open");
         localStorage.setItem("current_user", 0);
         let removeHearts = document.querySelectorAll("[id*='heart']");
         removeHearts.forEach(function(heart) {
             heart.parentElement.removeChild(heart);
         });
-
+        contentContainer.innerHTML = "";
+        loadRandomRecipes();
         createLogin();
         createRegister();
     });
@@ -279,44 +287,43 @@ function createRegister() {
     })
 }
 
-async function loginFormSubmitEventListener(loginFormUsername, loginFormPassword, loginFormSubmit) {
+async function loginFormSubmitEventListener(loginFormUsername, loginFormPassword) {
 
-    loginFormSubmit.addEventListener("click", () => {
-
-        if (loginFormUsername.value.trim() != "" && loginFormPassword.value.trim() != "") {
-            registerLoginPopUp.removeAttribute("open");
-            let loginAttempt = {
-                username: loginFormUsername.value,
-                password: loginFormPassword.value
-            }
-            try {  
-                fetch("http://localhost:8080/custom-login", {
-                    method: "POST",
-                    headers: {"Content-Type" : "application/json"},
-                    body: JSON.stringify(loginAttempt)
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.error) {
-                        currentUserId = data.id;
-                        localStorage.setItem("current_user", currentUserId);
-                        createHeartImage(recipeImages, currentUserId);
-                        createLogout();
-                        createMyRecipes();
-                    } else {
-                        alert("Invalid username or password.")
-                    }
-                })
-            } catch {
-                alert("Something went wrong. Please try again");
-            }  
-        } else {
-            alert("Please enter a username and password");
+    if (loginFormUsername.value.trim() != "" && loginFormPassword.value.trim() != "") {
+        registerLoginPopUp.removeAttribute("open");
+        let loginAttempt = {
+            username: loginFormUsername.value,
+            password: loginFormPassword.value
         }
-    })
+        try {  
+            await fetch("http://localhost:8080/custom-login", {
+                method: "POST",
+                headers: {"Content-Type" : "application/json"},
+                body: JSON.stringify(loginAttempt)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.error) {
+                    contentContainer.innerHTML = "";
+                    currentUserId = data.id;
+                    localStorage.setItem("current_user", currentUserId);
+                    loadRandomRecipes()
+                    createHeartImage(recipeImages);
+                    createLogout();
+                    createMyRecipes();
+                } else {
+                    alert("Invalid username or password.")
+                }
+            })
+        } catch {
+            alert("Something went wrong. Please try again");
+        }  
+    } else {
+        alert("Please enter a username and password");
+    }
 }
 
-function createHeartImage(recipeImages, currentUserId) {
+function createHeartImage(recipeImages) {
 
     if (Array.isArray(recipeImages)) {
         recipeImages.forEach(recipeImage => {
@@ -342,13 +349,15 @@ function createHeartImage(recipeImages, currentUserId) {
             heartImage.style.zIndex = "2";
             heartImage.id = "heart" + recipeImages.id;
             recipeImages.parentElement.appendChild(heartImage);
-            heartImage.addEventListener("click", () => heartImageEventListener(heartImage, currentUserId));
+            heartImage.addEventListener("click", () => heartImageEventListener(heartImage));
     }  
 }
 
-function heartImageEventListener(heartImage, currentUserId) {
+function heartImageEventListener(heartImage) {
     
     let recipeId = heartImage.id.replace(/\D/g, "");
+    currentUserId = localStorage.getItem("current_user");
+    console.log("Here: " + currentUserId);
 
     if (heartImage.src.includes("/resources/static/images/heartEmpty.png")) {
         if(currentUserId != 0) {
@@ -459,10 +468,10 @@ async function registerFormSubmitEventListener(registerLoginPopUp, registerFormU
         }
     }
 
-function createMyRecipes() {
+async function createMyRecipes() {
 
-    let myRecipesBtnConatainer = document.createElement("div");
     let myRecipesBtn = document.createElement("button");
+    myRecipesBtn.id = "myRecipesBtn";
     myRecipesBtn.innerText = "My Recipes";
     myRecipesBtn.type = "button";
     myRecipesBtnConatainer.appendChild(myRecipesBtn);
@@ -471,7 +480,7 @@ function createMyRecipes() {
     myRecipesBtn.addEventListener("click", () => myRecipesBtnEventListener());
 }
 
-function myRecipesBtnEventListener() {
+async function myRecipesBtnEventListener() {
     
     contentContainer.innerHTML = "";
     currentUserId = localStorage.getItem("current_user");
@@ -484,23 +493,65 @@ function myRecipesBtnEventListener() {
     let addNewRecipeBtn = document.createElement("button");
     addNewRecipeBtn.innerText = "Add a New Recipe";
     addNewRecipeContainer.appendChild(addNewRecipeBtn);
-    addNewRecipeBtn.addEventListener("click", () => addNewRecipeBtnEventListerner());
+    let event = -1;
+    addNewRecipeBtn.addEventListener("click", () => addNewRecipeBtnEventListener(event));
 
-    contentContainer.append(myRecipesHeaderContainer, addNewRecipeContainer);
+    let myRecipesContainer = document.createElement("div");
+
+    await fetch ("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes")
+    .then(res => res.json())
+    .then(data => {
+        console.log(data);
+        data.forEach(recipe => {
+            let singleRecipeContainer = document.createElement("div");
+            singleRecipeContainer.style.border = "1px solid black";
+            singleRecipeContainer.style.margin = "2% 1% 2% 1%";
+            singleRecipeContainer.style.padding = "1%"
+            let singleRecipeHeader = document.createElement("h3");
+            singleRecipeHeader.innerText = recipe.recipeName;
+            
+            let ingredientUl = document.createElement("ul");
+            console.log(recipe.ingredients.length);
+            for(let i = 0; i < recipe.ingredients.length; i++) {
+                let li = document.createElement("li");
+                li.innerText = recipe.ingredients[i];
+                console.log(recipe.ingredients[i]);
+                ingredientUl.appendChild(li);
+            }
+
+            let recipeMethodText = document.createElement("p");
+            recipeMethodText.innerText = recipe.recipeMethod;
+
+            let recipeEditBtn = document.createElement("button");
+            recipeEditBtn.type = "button";
+            recipeEditBtn.innerText = "Edit Recipe";
+            recipeEditBtn.id = recipe.userRecipeId;
+            let event = recipe.userRecipeId;
+            console.log("edit: " + event)
+            recipeEditBtn.addEventListener("click", () => addNewRecipeBtnEventListener(event, recipe.recipeName, recipe.recipeMethod));
+
+            singleRecipeContainer.append(singleRecipeHeader, ingredientUl, recipeMethodText, recipeEditBtn);
+            myRecipesContainer.appendChild(singleRecipeContainer);
+        })
+    })
+
+    contentContainer.append(myRecipesHeaderContainer, addNewRecipeContainer, myRecipesContainer);
 }
 
-function addNewRecipeBtnEventListerner() {
-    
-    let newRecipeDialog = document.createElement("dialog");
+function addNewRecipeBtnEventListener(event, recipeName, method) {
+
+    recipeDialog.innerHTML = "";
+    recipeDialog.style.position = "absolute";
+    recipeDialog.style.top = "10";
     let newRecipeForm = document.createElement("form");
     let newRecipeFormName = document.createElement("input");
     newRecipeFormName.placeholder = "Recipe Name";
     newRecipeFormName.required = "true";
     newRecipeFormName.name = "newRecipeName";
-
+    
     let ingredientsLabel = document.createElement("label");
     ingredientsLabel.innerText = "Add Ingredients (max 10)";
-
+    
     let ingredientDiv = document.createElement("div");
     let newRecipeIngredient = document.createElement("input");
     newRecipeIngredient.name = "ingredient";
@@ -509,12 +560,12 @@ function addNewRecipeBtnEventListerner() {
     let newIngredientBtn = document.createElement("button");
     newIngredientBtn.type = "button";
     newIngredientBtn.innerText = "Add Another Ingredient";
-
+    
     ingredientDiv.append(newRecipeIngredient, newIngredientBtn);
-
+    
     localStorage.setItem("count", 0);
     newIngredientBtn.addEventListener("click", () => newIngredientBtnEventListener(ingredientDiv));
-
+    
     let newRecipeMethod = document.createElement("textarea");
     newRecipeMethod.placeholder = "Method";
     newRecipeMethod.style.width = "50vw";
@@ -522,18 +573,23 @@ function addNewRecipeBtnEventListerner() {
     newRecipeMethod.maxLength = "200";
     newRecipeMethod.required = "true";
     newRecipeMethod.name = "method";
-
+    
+    if (event != -1) {
+        newRecipeFormName.value = recipeName;
+        newRecipeMethod.value = method;
+        console.log("now!!")
+;    }
     let submitRecipeBtn = document.createElement("button");
     submitRecipeBtn.type = "button";
     submitRecipeBtn.innerText = "Save Recipe";
 
     
     newRecipeForm.append(newRecipeFormName, ingredientsLabel, ingredientDiv, newIngredientBtn, newRecipeMethod, submitRecipeBtn);
-    newRecipeDialog.appendChild(newRecipeForm);
-    newRecipeDialog.setAttribute("open", true);
-    contentContainer.appendChild(newRecipeDialog);
+    recipeDialog.appendChild(newRecipeForm);
+    recipeDialog.setAttribute("open", true);
+    contentContainer.appendChild(recipeDialog);
     
-    submitRecipeBtn.addEventListener("click", () => submitRecipeBtnEventListener(newRecipeFormName, newRecipeMethod, newRecipeDialog));
+    submitRecipeBtn.addEventListener("click", () => submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeMethod));
 }
 
 function newIngredientBtnEventListener(ingredientDiv) {
@@ -553,33 +609,63 @@ function newIngredientBtnEventListener(ingredientDiv) {
     }
 }
 
-function submitRecipeBtnEventListener(newRecipeFormName, newRecipeMethod, newRecipeDialog) {
+function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeMethod) {
     
-    if (newRecipeFormName.value.trim() != "" && newRecipeMethod.value.trim() != "") {
-        let ingredients = document.getElementsByName("ingredient");
-        let ingredientsArray = Array.from(ingredients).map(ing => ing.value.trim()).filter(value => value != "");
-
-        console.log(localStorage.getItem("current_user"));
-        console.log(newRecipeFormName.value);
-        console.log(ingredientsArray);
-        console.log(newRecipeMethod.value);
-
-        fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/add-recipe", {
-            method: "POST",
-            headers: {
-                "Content-Type" : "application/json"
-            },
-            body: JSON.stringify({
-                userId : localStorage.getItem("current_user"),
-                recipeName: newRecipeFormName.value,
-                ingredients: ingredientsArray,
-                recipeMethod : newRecipeMethod.value
+    console.log(event + "!!!!")
+    if (event == -1) {
+        if (newRecipeFormName.value.trim() != "" && newRecipeMethod.value.trim() != "") {
+            let ingredients = document.getElementsByName("ingredient");
+            let ingredientsArray = Array.from(ingredients).map(ing => ing.value.trim()).filter(value => value != "");
+    
+            console.log("here!!!!");
+    
+            fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/add-recipe", {
+                method: "POST",
+                headers: {
+                    "Content-Type" : "application/json"
+                },
+                body: JSON.stringify({
+                    userId : localStorage.getItem("current_user"),
+                    recipeName: newRecipeFormName.value,
+                    ingredients: ingredientsArray,
+                    recipeMethod : newRecipeMethod.value
+                })
             })
-        })
-        .then(res => res.json())
-        .then(data => {
-            newRecipeDialog.innerHTML = "";
-            newRecipeDialog.removeAttribute("open");
-        })       
+            .then(res => res.json())
+            .then(data => {
+                
+            })       
+        }
+    } else {
+        if (newRecipeFormName.value.trim() != "" && newRecipeMethod.value.trim() != "") {
+            let ingredients = document.getElementsByName("ingredient");
+            let ingredientsArray = Array.from(ingredients).map(ing => ing.value.trim()).filter(value => value != "");
+    
+            fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/" + event + "/edit-recipe", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type" : "application/json"
+                },
+                body: JSON.stringify({
+                    userId : localStorage.getItem("current_user"),
+                    recipeName: newRecipeFormName.value,
+                    ingredients: ingredientsArray,
+                    recipeMethod : newRecipeMethod.value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+
+            })       
+        }   
     }
+    console.log("heresdvbsbs");
+    myRecipesBtnConatainer.innerHTML = "";
+    registerBtnContainer.innerHTML = "";
+    logBtnContainer.innerHTML = "";
+    createLogout();
+    recipeDialog.innerHTML = "";
+    recipeDialog.removeAttribute("open");
+    myRecipesBtnEventListener();
 }
+
