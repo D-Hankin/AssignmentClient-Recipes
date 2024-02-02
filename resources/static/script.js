@@ -502,40 +502,58 @@ async function myRecipesBtnEventListener() {
     .then(res => res.json())
     .then(data => {
         console.log(data);
-        data.forEach(recipe => {
-            let singleRecipeContainer = document.createElement("div");
-            singleRecipeContainer.style.border = "1px solid black";
-            singleRecipeContainer.style.margin = "2% 1% 2% 1%";
-            singleRecipeContainer.style.padding = "1%"
-            let singleRecipeHeader = document.createElement("h3");
-            singleRecipeHeader.innerText = recipe.recipeName;
-            
-            let ingredientUl = document.createElement("ul");
-            console.log(recipe.ingredients.length);
-            for(let i = 0; i < recipe.ingredients.length; i++) {
-                let li = document.createElement("li");
-                li.innerText = recipe.ingredients[i];
-                console.log(recipe.ingredients[i]);
-                ingredientUl.appendChild(li);
-            }
 
-            let recipeMethodText = document.createElement("p");
-            recipeMethodText.innerText = recipe.recipeMethod;
+        if (data.length == 0) {
+            let noRecipes = document.createElement("h3");
+            noRecipes.innerText = "You don't currently have any personal recipes saved.";
+            myRecipesContainer.appendChild(noRecipes);
+        } else {
+            data.forEach(recipe => {
+                let singleRecipeContainer = document.createElement("div");
+                singleRecipeContainer.style.border = "1px solid black";
+                singleRecipeContainer.style.margin = "2% 1% 2% 1%";
+                singleRecipeContainer.style.padding = "1%"
+                let singleRecipeHeader = document.createElement("h3");
+                singleRecipeHeader.innerText = recipe.recipeName;
+                
+                let ingredientUl = document.createElement("ul");
+                console.log(recipe.ingredients.length);
+                for(let i = 0; i < recipe.ingredients.length; i++) {
+                    let li = document.createElement("li");
+                    li.innerText = recipe.ingredients[i];
+                    console.log(recipe.ingredients[i]);
+                    ingredientUl.appendChild(li);
+                }
+    
+                let recipeMethodText = document.createElement("p");
+                recipeMethodText.innerText = recipe.recipeMethod;
+    
+                let recipeEditBtn = document.createElement("button");
+                recipeEditBtn.type = "button";
+                recipeEditBtn.innerText = "Edit Recipe";
+                recipeEditBtn.id = recipe.userRecipeId;
+                let event = recipe.userRecipeId;
+                console.log("edit: " + event)
+                recipeEditBtn.addEventListener("click", () => addNewRecipeBtnEventListener(event, recipe.recipeName, recipe.recipeMethod));
 
-            let recipeEditBtn = document.createElement("button");
-            recipeEditBtn.type = "button";
-            recipeEditBtn.innerText = "Edit Recipe";
-            recipeEditBtn.id = recipe.userRecipeId;
-            let event = recipe.userRecipeId;
-            console.log("edit: " + event)
-            recipeEditBtn.addEventListener("click", () => addNewRecipeBtnEventListener(event, recipe.recipeName, recipe.recipeMethod));
-
-            singleRecipeContainer.append(singleRecipeHeader, ingredientUl, recipeMethodText, recipeEditBtn);
-            myRecipesContainer.appendChild(singleRecipeContainer);
-        })
+                let deleteRecipeBtn = document.createElement("button");
+                deleteRecipeBtn.type = "button";
+                deleteRecipeBtn.innerText = "Delete Recipe"
+                deleteRecipeBtn.id = "d" + recipe.userRecipeId;
+                deleteRecipeBtn.addEventListener("click", () => deleteRecipeBtnEventListener(deleteRecipeBtn.id));
+    
+                singleRecipeContainer.append(singleRecipeHeader, ingredientUl, recipeMethodText, recipeEditBtn, deleteRecipeBtn);
+                myRecipesContainer.appendChild(singleRecipeContainer);
+            })
+        }
     })
 
-    contentContainer.append(myRecipesHeaderContainer, addNewRecipeContainer, myRecipesContainer);
+    let divider = document.createElement("div");
+    divider.style.width = "100vw";
+    divider.style.height = "20px";
+    divider.style.backgroundColor = "black";
+
+    contentContainer.append(myRecipesHeaderContainer, addNewRecipeContainer, myRecipesContainer, divider);
 }
 
 function addNewRecipeBtnEventListener(event, recipeName, method) {
@@ -577,8 +595,8 @@ function addNewRecipeBtnEventListener(event, recipeName, method) {
     if (event != -1) {
         newRecipeFormName.value = recipeName;
         newRecipeMethod.value = method;
-        console.log("now!!")
-;    }
+        console.log("now!!");
+    }
     let submitRecipeBtn = document.createElement("button");
     submitRecipeBtn.type = "button";
     submitRecipeBtn.innerText = "Save Recipe";
@@ -659,7 +677,6 @@ function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeMethod)
             })       
         }   
     }
-    console.log("heresdvbsbs");
     myRecipesBtnConatainer.innerHTML = "";
     registerBtnContainer.innerHTML = "";
     logBtnContainer.innerHTML = "";
@@ -669,3 +686,30 @@ function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeMethod)
     myRecipesBtnEventListener();
 }
 
+function deleteRecipeBtnEventListener(deleteRecipeBtnid) {
+    console.log("click delete");
+
+    let confirmation = window.confirm("Are you sure?");
+    if(confirmation) {
+        console.log("OK");
+        fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/" + deleteRecipeBtnid.replace(/\D/g, "") + "/delete-recipe", {
+            method: "DELETE",
+            headers: {
+                "Content-Type" : "application/json"
+            }
+        })
+        .then(res => res.text())
+        .then(data => {
+            registerBtnContainer.innerHTML = "";
+            logBtnContainer.innerHTML = "";
+            createLogout();
+            recipeDialog.innerHTML = "";
+            recipeDialog.removeAttribute("open");
+            myRecipesBtnEventListener();
+            myRecipesBtnConatainer.innerHTML = "";
+            alert(data)
+        })
+    } else {
+        console.log("cancel");
+    }
+}
