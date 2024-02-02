@@ -76,7 +76,6 @@ async function randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer,
         recipeImage.id = data.meals[0].idMeal; 
         recipeImages.push(recipeImage);
         recipeImageContainer.appendChild(recipeImage);
-        console.log(data);
         
         currentUserId = localStorage.getItem("current_user");
         if (currentUserId != 0 && typeof currentUserId !== "undefined") {
@@ -202,7 +201,11 @@ function createLogin() {
         let loginFormSubmit = document.createElement("button");
         loginFormSubmit.type = "button";
         loginFormSubmit.innerText = "Log in";
-        loginForm.append(loginFormUsername, loginFormPassword, loginFormSubmit);
+        let cancelBtn = document.createElement("button");
+        cancelBtn.type= "button";
+        cancelBtn.innerText = "Cancel";
+        cancelBtn.addEventListener("click", () => cancelBtnEventListener());
+        loginForm.append(loginFormUsername, loginFormPassword, loginFormSubmit, cancelBtn);
         registerLoginPopUp.appendChild(loginForm);
         registerLoginPopUp.setAttribute("open", true);
 
@@ -211,9 +214,8 @@ function createLogin() {
 }
 
 function createLogout() {
-
-    registerBtnContainer.innerHTML = "";
-    logBtnContainer.innerHTML = "";
+    console.log("i m jheeetrt");
+    contentContainer.innerHTML = "";
     let loginBtn = document.createElement("button");
     loginBtn.innerText = "Log out"
     logBtnContainer.appendChild(loginBtn);
@@ -284,8 +286,12 @@ function createRegister() {
         let registerFormSubmit = document.createElement("button");
         registerFormSubmit.type = "button";
         registerFormSubmit.innerText = "Register";
+        let cancelBtn = document.createElement("button");
+        cancelBtn.type= "button";
+        cancelBtn.innerText = "Cancel";
+        cancelBtn.addEventListener("click", () => cancelBtnEventListener());
         registerForm.append(registerFormUsername, registerFormPassword, registerFormReEnterPassword, registerFormFirstName, registerFormLastName, registerFormEmail, 
-            registerFormSubmit);
+            registerFormSubmit, cancelBtn);
         registerLoginPopUp.appendChild(registerForm);
         registerLoginPopUp.setAttribute("open", "true");
     
@@ -302,29 +308,29 @@ async function loginFormSubmitEventListener(loginFormUsername, loginFormPassword
             username: loginFormUsername.value,
             password: loginFormPassword.value
         }
-        try {  
-            await fetch("http://localhost:8080/custom-login", {
-                method: "POST",
-                headers: {"Content-Type" : "application/json"},
-                body: JSON.stringify(loginAttempt)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (!data.error) {
-                    contentContainer.innerHTML = "";
-                    currentUserId = data.id;
-                    localStorage.setItem("current_user", currentUserId);
-                    loadRandomRecipes()
-                    createHeartImage(recipeImages);
-                    createLogout();
-                    createMyRecipes();
-                } else {
-                    alert("Invalid username or password.")
-                }
-            })
-        } catch {
-            alert("Something went wrong. Please try again");
-        }  
+        fetch("http://localhost:8080/custom-login", {
+            method: "POST",
+            headers: {"Content-Type" : "application/json"},
+            body: JSON.stringify(loginAttempt)
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log(data);
+            if (!data.error) {
+                contentContainer.innerHTML = "";
+                registerBtnContainer.innerHTML = "";
+                logBtnContainer.innerHTML = "";
+                currentUserId = data.id;
+                localStorage.setItem("current_user", currentUserId);
+                let alreadyLiked = false;
+                createLogout();
+                createMyRecipes();
+                loadRandomRecipes()
+                createHeartImage(alreadyLiked, recipeImages);
+            } else {
+                alert("Invalid username or password.")
+            }
+        })
     } else {
         alert("Please enter a username and password");
     }
@@ -648,7 +654,7 @@ function addNewRecipeBtnEventListener(event, recipeName, method) {
 
     recipeDialog.innerHTML = "";
     recipeDialog.style.position = "absolute";
-    recipeDialog.style.top = "10";
+    recipeDialog.style.top = "10%";
     let newRecipeForm = document.createElement("form");
     let newRecipeFormName = document.createElement("input");
     newRecipeFormName.placeholder = "Recipe Name";
@@ -689,8 +695,13 @@ function addNewRecipeBtnEventListener(event, recipeName, method) {
     submitRecipeBtn.type = "button";
     submitRecipeBtn.innerText = "Save Recipe";
 
+    let cancelBtn = document.createElement("button");
+    cancelBtn.type= "button";
+    cancelBtn.innerText = "Cancel";
+    cancelBtn.addEventListener("click", () => cancelBtnEventListener())
+
     
-    newRecipeForm.append(newRecipeFormName, ingredientsLabel, ingredientDiv, newIngredientBtn, newRecipeMethod, submitRecipeBtn);
+    newRecipeForm.append(newRecipeFormName, ingredientsLabel, ingredientDiv, newIngredientBtn, newRecipeMethod, submitRecipeBtn, cancelBtn);
     recipeDialog.appendChild(newRecipeForm);
     recipeDialog.setAttribute("open", true);
     contentContainer.appendChild(recipeDialog);
@@ -739,7 +750,8 @@ function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeMethod)
             })
             .then(res => res.json())
             .then(data => {
-                
+                console.log("new recipe");
+                contentContainer.innerHTML = "";
             })       
         }
     } else {
@@ -761,16 +773,19 @@ function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeMethod)
             })
             .then(res => res.json())
             .then(data => {
-
+                console.log("edit recipe");
             })       
         }   
     }
+    contentContainer.innerHTML = "";
     myRecipesBtnConatainer.innerHTML = "";
     registerBtnContainer.innerHTML = "";
     logBtnContainer.innerHTML = "";
-    createLogout();
+    createRegister();
+    createMyRecipes();
     recipeDialog.innerHTML = "";
     recipeDialog.removeAttribute("open");
+
     myRecipesBtnEventListener();
 }
 
@@ -800,4 +815,10 @@ function deleteRecipeBtnEventListener(deleteRecipeBtnid) {
     } else {
         console.log("cancel");
     }
+}
+
+function cancelBtnEventListener() {
+    console.log("click");
+    recipeDialog.removeAttribute("open");
+    registerLoginPopUp.removeAttribute("open");
 }
