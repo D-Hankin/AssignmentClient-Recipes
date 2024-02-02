@@ -40,7 +40,7 @@ home.addEventListener("click", async () => {
 })
 
 searchBtn.addEventListener("click", async () => {
-    if (searchInput.value.trim() != "") {
+    if (searchInput.value.trim() != "" && searchInput.value.length == 1) {
         contentContainer.innerHTML = "";
         let searchResultsHeader = document.createElement("h2");
         searchResultsHeader.innerText = "Search Results";
@@ -83,6 +83,9 @@ searchBtn.addEventListener("click", async () => {
         searchInput.value = "";
 
 
+    } else {
+        alert("Yuo can only search by the first letter.")
+        searchInput.value = "";
     }
 })
 
