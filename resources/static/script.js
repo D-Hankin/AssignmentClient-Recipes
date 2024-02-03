@@ -15,10 +15,10 @@ const selectCategoryBtn = document.getElementById("selectCategoryBtn");
 let currentUserId;
 let recipeImages = []; 
 
-if (localStorage.getItem("current_user")) {
-    currentUserId = localStorage.getItem("current_user");
+if (sessionStorage.getItem("current_user")) {
+    currentUserId = sessionStorage.getItem("current_user");
 } else {
-    localStorage.setItem("current_user", 0);
+    sessionStorage.setItem("current_user", 0);
 }
 
 if (typeof currentUserId != "undefined" && currentUserId != 0) {
@@ -33,16 +33,11 @@ if (typeof currentUserId != "undefined" && currentUserId != 0) {
     createcategoriesSelect();
 }
 
-window.addEventListener("unload", () => {
-    localStorage.removeItem("current_user");
-    localStorage.removeItem("count");
-})
-
 home.addEventListener("click", async () => {
 
     contentContainer.innerHTML="";
     registerLoginPopUp.removeAttribute("open");
-    currentUserId = localStorage.getItem("current_user");
+    currentUserId = sessionStorage.getItem("current_user");
     console.log("home: " + currentUserId);
     loadRandomRecipes(currentUserId);
     
@@ -208,7 +203,7 @@ async function randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer,
         recipeImages.push(recipeImage);
         recipeImageContainer.appendChild(recipeImage);
         
-        currentUserId = localStorage.getItem("current_user");
+        currentUserId = sessionStorage.getItem("current_user");
         if (currentUserId != 0 && typeof currentUserId !== "undefined") {
             let alreadyLiked = false;
             createHeartImage(alreadyLiked, recipeImage);
@@ -301,7 +296,7 @@ function toMeal(alreadyLiked, recipeName, recipeImage, data) {
     recipeSource.style.fontStyle = "italic";
     recipeSourceContainer.appendChild(recipeSource) 
     contentContainer.append(recipeNameContainer, recipeImageContainer, recipeIngredientsContainer, recipeInstructionsContainer, recipeSourceContainer);
-    currentUserId = localStorage.getItem("current_user");
+    currentUserId = sessionStorage.getItem("current_user");
 
     if (currentUserId !== 0) {
         createHeartImage(alreadyLiked, recipeImage);
@@ -345,7 +340,7 @@ function createLogin() {
 }
 
 function createLogout() {
-    console.log("i m jheeetrt");
+
     contentContainer.innerHTML = "";
     let loginBtn = document.createElement("button");
     loginBtn.innerText = "Log out"
@@ -364,7 +359,7 @@ function createLogout() {
             myBtn.parentElement.removeChild(document.getElementById("myRecipesBtn"));
         }
         registerLoginPopUp.removeAttribute("open");
-        localStorage.setItem("current_user", 0);
+        sessionStorage.setItem("current_user", 0);
         let removeHearts = document.querySelectorAll("[id*='heart']");
         removeHearts.forEach(function(heart) {
             heart.parentElement.removeChild(heart);
@@ -373,8 +368,8 @@ function createLogout() {
         loadRandomRecipes();
         createLogin();
         createRegister();
-        if (localStorage.getItem("count")) {
-            localStorage.removeItem("count");
+        if (sessionStorage.getItem("count")) {
+            sessionStorage.removeItem("count");
         }
     });
 }
@@ -449,13 +444,13 @@ async function loginFormSubmitEventListener(loginFormUsername, loginFormPassword
         })
         .then(res => res.json())
         .then(data => {
-            console.log(data);
+
             if (!data.error) {
                 contentContainer.innerHTML = "";
                 registerBtnContainer.innerHTML = "";
                 logBtnContainer.innerHTML = "";
                 currentUserId = data.id;
-                localStorage.setItem("current_user", currentUserId);
+                sessionStorage.setItem("current_user", currentUserId);
                 let alreadyLiked = false;
                 createLogout();
                 createMyRecipes();
@@ -472,7 +467,7 @@ async function loginFormSubmitEventListener(loginFormUsername, loginFormPassword
 
 function createHeartImage(alreadyLiked, recipeImages) {
 
-    currentUserId = parseInt(localStorage.getItem("current_user"));
+    currentUserId = parseInt(sessionStorage.getItem("current_user"));
 
     if (currentUserId !== 0) {
     
@@ -527,7 +522,7 @@ function createHeartImage(alreadyLiked, recipeImages) {
                     heartImage.style.height = "50px";
                     heartImage.style.zIndex = "2";
                     heartImage.id = "heart" + recipeImages.id;
-                    recipeImages.parentElement.appendChild(heartImage);
+                    //recipeImages.parentElement.appendChild(heartImage);
                     heartImage.addEventListener("click", () => heartImageEventListener(heartImage));
                 }
         }
@@ -538,7 +533,7 @@ function createHeartImage(alreadyLiked, recipeImages) {
 async function heartImageEventListener(heartImage) {
     
     let recipeId = heartImage.id.replace(/\D/g, "");
-    currentUserId = localStorage.getItem("current_user");
+    currentUserId = sessionStorage.getItem("current_user");
 
     if (heartImage.src.includes("/resources/static/images/heartEmpty.png")) {
         if(currentUserId !== 0) {
@@ -663,7 +658,7 @@ function createMyRecipes() {
 async function myRecipesBtnEventListener() {
     
     contentContainer.innerHTML = "";
-    currentUserId = localStorage.getItem("current_user");
+    currentUserId = sessionStorage.getItem("current_user");
     let myRecipesHeaderContainer = document.createElement("div");
     let myRecipesHeader = document.createElement("h2");
     myRecipesHeader.innerText = "My Recipes";
@@ -676,7 +671,7 @@ async function myRecipesBtnEventListener() {
     addNewRecipeBtn.addEventListener("click", () => addNewRecipeBtnEventListener(event));
     let myRecipesContainer = document.createElement("div");
 
-    await fetch ("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes")
+    await fetch ("http://localhost:8080/user/" + sessionStorage.getItem("current_user") + "/my-recipes")
     .then(res => res.json())
     .then(data => {
         console.log(data);
@@ -688,6 +683,7 @@ async function myRecipesBtnEventListener() {
         } else {
             data.forEach(recipe => {
                 let singleRecipeContainer = document.createElement("div");
+                singleRecipeContainer.id = "singleRecipeContainer";
                 singleRecipeContainer.style.border = "1px solid black";
                 singleRecipeContainer.style.margin = "2% 1% 2% 1%";
                 singleRecipeContainer.style.padding = "1%"
@@ -734,7 +730,7 @@ async function myRecipesBtnEventListener() {
     likedRecipesHeader.innerText = "My Liked Recipes";
     let likedRecipesList = document.createElement("ul");
 
-    await fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/liked-recipes")
+    await fetch("http://localhost:8080/user/" + sessionStorage.getItem("current_user") + "/my-recipes/liked-recipes")
     .then(res => res.json())
     .then(data => {
         if (data.length == 0) {
@@ -771,7 +767,7 @@ async function myRecipesBtnEventListener() {
                     recipeImages.push(recipeImage);
                     recipeImageContainer.appendChild(recipeImage);
                     let alreadyLiked = true;
-                    li.addEventListener("click", () => toMeal(alreadyLiked, recipeName, recipeImage, data1, localStorage.getItem("current_user")));
+                    li.addEventListener("click", () => toMeal(alreadyLiked, recipeName, recipeImage, data1, sessionStorage.getItem("current_user")));
                 })
             
             })
@@ -808,7 +804,7 @@ function addNewRecipeBtnEventListener(event, recipeName, method) {
     
     ingredientDiv.append(newRecipeIngredient, newIngredientBtn);
     
-    localStorage.setItem("count", 0);
+    sessionStorage.setItem("count", 0);
     newIngredientBtn.addEventListener("click", () => newIngredientBtnEventListener(ingredientDiv));
     
     let newRecipeMethod = document.createElement("textarea");
@@ -844,10 +840,10 @@ function newIngredientBtnEventListener(ingredientDiv) {
     
     let count;
 
-    if (localStorage.getItem("count")) {
-        count = localStorage.getItem("count");
+    if (sessionStorage.getItem("count")) {
+        count = sessionStorage.getItem("count");
     } else {
-        localStorage.setItem("count", 0);
+        sessionStorage.setItem("count", 0);
     }   
 
     if (count < 10) {
@@ -856,7 +852,7 @@ function newIngredientBtnEventListener(ingredientDiv) {
         newRecipeIngredient.name = "ingredient";
         ingredientDiv.appendChild(newRecipeIngredient);
         let newCount = parseInt(count) + 1;
-        localStorage.setItem("count", newCount);
+        sessionStorage.setItem("count", newCount);
     } else {
         alert("Only 10 ingredients allowed.")
     }
@@ -869,13 +865,13 @@ async function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeM
             let ingredients = document.getElementsByName("ingredient");
             let ingredientsArray = Array.from(ingredients).map(ing => ing.value.trim()).filter(value => value != "");
     
-            await fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/add-recipe", {
+            await fetch("http://localhost:8080/user/" + sessionStorage.getItem("current_user") + "/my-recipes/add-recipe", {
                 method: "POST",
                 headers: {
                     "Content-Type" : "application/json"
                 },
                 body: JSON.stringify({
-                    userId : localStorage.getItem("current_user"),
+                    userId : sessionStorage.getItem("current_user"),
                     recipeName: newRecipeFormName.value,
                     ingredients: ingredientsArray,
                     recipeMethod : newRecipeMethod.value
@@ -892,13 +888,13 @@ async function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeM
             let ingredients = document.getElementsByName("ingredient");
             let ingredientsArray = Array.from(ingredients).map(ing => ing.value.trim()).filter(value => value != "");
     
-            await fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/" + event + "/edit-recipe", {
+            await fetch("http://localhost:8080/user/" + sessionStorage.getItem("current_user") + "/my-recipes/" + event + "/edit-recipe", {
                 method: "PATCH",
                 headers: {
                     "Content-Type" : "application/json"
                 },
                 body: JSON.stringify({
-                    userId : localStorage.getItem("current_user"),
+                    userId : sessionStorage.getItem("current_user"),
                     recipeName: newRecipeFormName.value,
                     ingredients: ingredientsArray,
                     recipeMethod : newRecipeMethod.value
@@ -926,7 +922,7 @@ async function deleteRecipeBtnEventListener(deleteRecipeBtnid) {
 
     let confirmation = window.confirm("Are you sure?");
     if(confirmation) {
-        await fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/" + deleteRecipeBtnid.replace(/\D/g, "") + "/delete-recipe", {
+        await fetch("http://localhost:8080/user/" + sessionStorage.getItem("current_user") + "/my-recipes/" + deleteRecipeBtnid.replace(/\D/g, "") + "/delete-recipe", {
             method: "DELETE",
             headers: {
                 "Content-Type" : "application/json"

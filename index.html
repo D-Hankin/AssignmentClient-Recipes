@@ -11,8 +11,17 @@
     <div id="headerContainer">
         <div id="nav">
             <nav>
-                <dialog id="menuDialog"></dialog>
-                <img id="home" src="resources/static/images/home.png">
+                <div id="registerLoginContainer">
+                    <div id="homeContainer">
+                        <img id="home" src="resources/static/images/home.png">
+                    </div>
+                    <div id="registerBtnContainer"></div>
+                    <div id="logBtnContainer"></div>
+                    <div id="myRecipesBtnContainer"></div>
+                    <dialog id="registerLoginPopUp"></dialog>
+                    <dialog id="recipeDialog"></dialog>
+                </div>
+                <label id="searchLabel">Search recipe first letter: </label>
                 <input id="searchInput" placeholder="Search Recipe (first letter)">
                 <button type="button" id="searchBtn">Go</button>
                 <label id="catgegoriesLabel">Categories: </label>
@@ -20,15 +29,9 @@
                 <button type="button" id="selectCategoryBtn">Go</button>
             </nav>
         </div>
-        <div id="registerLoginContainer">
-            <div id="registerBtnContainer"></div>
-            <div id="logBtnContainer"></div>
-            <div id="myRecipesBtnContainer"></div>
-            <dialog id="registerLoginPopUp"></dialog>
-            <dialog id="recipeDialog"></dialog>
-        </div>
         <h1>Dinner Time</h1>
     </div>
     <div id="contentContainer"></div>
+    <footer></footer>
 </body>
 </html>
