@@ -1,6 +1,3 @@
-
-//const userRecipeContainer = document.getElementById("userRecipeContainer");
-
 const contentContainer = document.getElementById("contentContainer");
 const registerBtnContainer = document.getElementById("registerBtnContainer");
 const logBtnContainer = document.getElementById("logBtnContainer");
@@ -12,19 +9,34 @@ const recipeDialog = document.getElementById("recipeDialog");
 const myRecipesBtnConatainer = document.getElementById("myRecipesBtnContainer");
 const searchInput = document.getElementById("searchInput");
 const searchBtn = document.getElementById("searchBtn");
+const categoriesSelect = document.getElementById("categoriesSelect");
+const selectCategoryBtn = document.getElementById("selectCategoryBtn");
 
+let currentUserId;
 let recipeImages = []; 
-let currentUserId = localStorage.getItem("current_user");
+
+if (localStorage.getItem("current_user")) {
+    currentUserId = localStorage.getItem("current_user");
+} else {
+    localStorage.setItem("current_user", 0);
+}
 
 if (typeof currentUserId != "undefined" && currentUserId != 0) {
     createLogout(currentUserId);
     loadRandomRecipes(currentUserId);
     createMyRecipes();
+    createcategoriesSelect();
 } else {
     loadRandomRecipes(currentUserId)
     createLogin();
     createRegister();
+    createcategoriesSelect();
 }
+
+window.addEventListener("unload", () => {
+    localStorage.removeItem("current_user");
+    localStorage.removeItem("count");
+})
 
 home.addEventListener("click", async () => {
 
@@ -40,6 +52,7 @@ home.addEventListener("click", async () => {
 })
 
 searchBtn.addEventListener("click", async () => {
+
     if (searchInput.value.trim() != "" && searchInput.value.length == 1) {
         contentContainer.innerHTML = "";
         let searchResultsHeader = document.createElement("h2");
@@ -75,7 +88,7 @@ searchBtn.addEventListener("click", async () => {
                     recipeImageContainer.appendChild(recipeImage);
                     console.log(recipeName);
                     let alreadyLiked = false;
-                    li.addEventListener("click", () => toMeal(alreadyLiked, recipeName, recipeImage, data, localStorage.getItem("currwent_user")));
+                    li.addEventListener("click", () => toMeal(alreadyLiked, recipeName, recipeImage, data));
             })
         })
 
@@ -88,6 +101,72 @@ searchBtn.addEventListener("click", async () => {
         searchInput.value = "";
     }
 })
+
+async function createcategoriesSelect() {
+
+    await fetch("https://www.themealdb.com/api/json/v1/1/categories.php")
+    .then(res => res.json())
+    .then(data => {
+        console.log(data);
+
+        data.categories.forEach(category => {
+            let categoryOption = document.createElement("option");
+            categoryOption.innerText = category.strCategory;
+            categoriesSelect.appendChild(categoryOption);
+            
+        })
+        selectCategoryBtn.addEventListener("click", () => selectCategoryBtnEventListener())
+    })
+}
+
+async function selectCategoryBtnEventListener() {
+    
+    await fetch("https://www.themealdb.com/api/json/v1/1/filter.php?c=" + categoriesSelect.options[categoriesSelect.selectedIndex].value)
+    .then(res => res.json())
+    .then(data => {
+        console.log(data);
+        contentContainer.innerHTML = "";
+        let categoryHeader = document.createElement("h2");
+        categoryHeader.innerText = categoriesSelect.options[categoriesSelect.selectedIndex].value;
+        contentContainer.appendChild(categoryHeader);
+        categoryMealsList = document.createElement("ul");
+
+        data.meals.forEach(async meal => {
+            await fetch("https://www.themealdb.com/api/json/v1/1/lookup.php?i=" + meal.idMeal)
+            .then(res => res.json())
+            .then(data => {
+                console.log(data);
+                let li = document.createElement("li");
+                li.innerText = data.meals[0].strMeal;
+                li.style.cursor = "pointer";
+                categoryMealsList.appendChild(li);
+                let recipeNameContainer = document.createElement("div");
+                let recipeName = document.createElement("h2");
+                recipeName.innerText = data.meals[0].strMeal;
+                recipeName.style.cursor = "pointer";
+                recipeName.style.textAlign = "center";
+                recipeNameContainer.appendChild(recipeName);
+                let recipeImageContainer = document.createElement("div");
+                recipeImageContainer.id = "RecipeDiv" + data.meals[0].idMeal; 
+                recipeImageContainer.style.position = "relative";
+                recipeImageContainer.style.textAlign = "center";
+                recipeImageContainer.style.width = "100vw";
+                let recipeImage = document.createElement("img");
+                recipeImage.style.cursor = "pointer";
+                recipeImage.style.width = "50%";
+                recipeImage.src = data.meals[0].strMealThumb;
+                recipeImage.id = data.meals[0].idMeal; 
+                recipeImages.push(recipeImage);
+                recipeImageContainer.appendChild(recipeImage);
+                console.log(recipeName.innerText);
+                let alreadyLiked = false;
+                li.addEventListener("click", () => toMeal(alreadyLiked, recipeName, recipeImage, data));
+
+            })
+        })
+        contentContainer.appendChild(categoryMealsList);
+    })
+}
 
 async function loadRandomRecipes(currentUserId) {
 
@@ -106,7 +185,7 @@ async function loadRandomRecipes(currentUserId) {
 
 async function randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer, currentUserId) {
 
-    fetch("https://www.themealdb.com/api/json/v1/1/random.php")
+    await fetch("https://www.themealdb.com/api/json/v1/1/random.php")
     .then(res => res.json())
     .then(data => {
            
@@ -153,9 +232,8 @@ async function randomRecipe(randomRecipeContainer, randomRecipeOptionsContainer,
     })
 }
 
-async function toMeal(alreadyLiked, recipeName, recipeImage, data, currentUserId) {
+function toMeal(alreadyLiked, recipeName, recipeImage, data) {
 
-    console.log(recipeName, recipeImage, data, localStorage.getItem("current_user"))
     contentContainer.innerHTML="";
     if (recipeName && typeof recipeName.style.cursor !== "undefined") {
         recipeName.style.cursor = "";
@@ -173,7 +251,6 @@ async function toMeal(alreadyLiked, recipeName, recipeImage, data, currentUserId
 
     let recipeNameContainer = document.createElement("div");
     recipeNameContainer.appendChild(recipeName);
-
     let recipeImageContainer = document.createElement("div");
     recipeImageContainer.style.position = "relative";
     recipeImageContainer.style.textAlign = "center";
@@ -225,8 +302,10 @@ async function toMeal(alreadyLiked, recipeName, recipeImage, data, currentUserId
     recipeSourceContainer.appendChild(recipeSource) 
     contentContainer.append(recipeNameContainer, recipeImageContainer, recipeIngredientsContainer, recipeInstructionsContainer, recipeSourceContainer);
     currentUserId = localStorage.getItem("current_user");
-    console.log(currentUserId);
-        createHeartImage(alreadyLiked, recipeImage, currentUserId);
+
+    if (currentUserId !== 0) {
+        createHeartImage(alreadyLiked, recipeImage);
+    }
 }
 
 function createLogin() {
@@ -272,9 +351,9 @@ function createLogout() {
     loginBtn.innerText = "Log out"
     logBtnContainer.appendChild(loginBtn);
     
-    loginBtn.addEventListener("click", () => {
+    loginBtn.addEventListener("click", async () => {
         currentUserId = 0;
-        fetch("http://localhost:8080/custom-logout", {
+        await fetch("http://localhost:8080/custom-logout", {
             mode: "no-cors",
             method: "POST",
             credentials: "include"
@@ -294,6 +373,9 @@ function createLogout() {
         loadRandomRecipes();
         createLogin();
         createRegister();
+        if (localStorage.getItem("count")) {
+            localStorage.removeItem("count");
+        }
     });
 }
 
@@ -360,7 +442,7 @@ async function loginFormSubmitEventListener(loginFormUsername, loginFormPassword
             username: loginFormUsername.value,
             password: loginFormPassword.value
         }
-        fetch("http://localhost:8080/custom-login", {
+        await fetch("http://localhost:8080/custom-login", {
             method: "POST",
             headers: {"Content-Type" : "application/json"},
             body: JSON.stringify(loginAttempt)
@@ -390,10 +472,26 @@ async function loginFormSubmitEventListener(loginFormUsername, loginFormPassword
 
 function createHeartImage(alreadyLiked, recipeImages) {
 
-    if (alreadyLiked == false) {
-        if (Array.isArray(recipeImages)) {
-            recipeImages.forEach(recipeImage => {
-                let heartImage = document.createElement("img");
+    currentUserId = parseInt(localStorage.getItem("current_user"));
+
+    if (currentUserId !== 0) {
+    
+        if (alreadyLiked == false) {
+            if (Array.isArray(recipeImages)) {
+                recipeImages.forEach(recipeImage => {
+                    let heartImage = document.createElement("img");
+                        heartImage.src = "/resources/static/images/heartEmpty.png";
+                        heartImage.style.position = "absolute";
+                        heartImage.style.top = "1%";
+                        heartImage.style.right = "27%";
+                        heartImage.style.width = "50px";
+                        heartImage.style.height = "50px";
+                        heartImage.style.zIndex = "2";
+                        heartImage.id = "heart" + recipeImage.id;
+                        recipeImage.parentElement.appendChild(heartImage);
+                    })
+                } else {
+                    let heartImage = document.createElement("img");
                     heartImage.src = "/resources/static/images/heartEmpty.png";
                     heartImage.style.position = "absolute";
                     heartImage.style.top = "1%";
@@ -401,26 +499,26 @@ function createHeartImage(alreadyLiked, recipeImages) {
                     heartImage.style.width = "50px";
                     heartImage.style.height = "50px";
                     heartImage.style.zIndex = "2";
-                    heartImage.id = "heart" + recipeImage.id;
-                    recipeImage.parentElement.appendChild(heartImage);
-                })
-            } else {
-                let heartImage = document.createElement("img");
-                heartImage.src = "/resources/static/images/heartEmpty.png";
-                heartImage.style.position = "absolute";
-                heartImage.style.top = "1%";
-                heartImage.style.right = "27%";
-                heartImage.style.width = "50px";
-                heartImage.style.height = "50px";
-                heartImage.style.zIndex = "2";
-                heartImage.id = "heart" + recipeImages.id;
-                recipeImages.parentElement.appendChild(heartImage);
-                heartImage.addEventListener("click", () => heartImageEventListener(heartImage));
-        }  
-    } else {
-        if (Array.isArray(recipeImages)) {
-            recipeImages.forEach(recipeImage => {
-                let heartImage = document.createElement("img");
+                    heartImage.id = "heart" + recipeImages.id;
+                    recipeImages.parentElement.appendChild(heartImage);
+                    heartImage.addEventListener("click", () => heartImageEventListener(heartImage));
+            }  
+        } else {
+            if (Array.isArray(recipeImages)) {
+                recipeImages.forEach(recipeImage => {
+                    let heartImage = document.createElement("img");
+                        heartImage.src = "/resources/static/images/heartRed.png";
+                        heartImage.style.position = "absolute";
+                        heartImage.style.top = "1%";
+                        heartImage.style.right = "27%";
+                        heartImage.style.width = "50px";
+                        heartImage.style.height = "50px";
+                        heartImage.style.zIndex = "2";
+                        heartImage.id = "heart" + recipeImage.id;
+                        recipeImage.parentElement.appendChild(heartImage);
+                    })
+                } else {
+                    let heartImage = document.createElement("img");
                     heartImage.src = "/resources/static/images/heartRed.png";
                     heartImage.style.position = "absolute";
                     heartImage.style.top = "1%";
@@ -428,35 +526,24 @@ function createHeartImage(alreadyLiked, recipeImages) {
                     heartImage.style.width = "50px";
                     heartImage.style.height = "50px";
                     heartImage.style.zIndex = "2";
-                    heartImage.id = "heart" + recipeImage.id;
-                    recipeImage.parentElement.appendChild(heartImage);
-                })
-            } else {
-                let heartImage = document.createElement("img");
-                heartImage.src = "/resources/static/images/heartRed.png";
-                heartImage.style.position = "absolute";
-                heartImage.style.top = "1%";
-                heartImage.style.right = "27%";
-                heartImage.style.width = "50px";
-                heartImage.style.height = "50px";
-                heartImage.style.zIndex = "2";
-                heartImage.id = "heart" + recipeImages.id;
-                recipeImages.parentElement.appendChild(heartImage);
-                heartImage.addEventListener("click", () => heartImageEventListener(heartImage));
-            }
+                    heartImage.id = "heart" + recipeImages.id;
+                    recipeImages.parentElement.appendChild(heartImage);
+                    heartImage.addEventListener("click", () => heartImageEventListener(heartImage));
+                }
+        }
     }
+
 }
 
-function heartImageEventListener(heartImage) {
+async function heartImageEventListener(heartImage) {
     
     let recipeId = heartImage.id.replace(/\D/g, "");
     currentUserId = localStorage.getItem("current_user");
-    console.log("Here: " + currentUserId);
 
     if (heartImage.src.includes("/resources/static/images/heartEmpty.png")) {
-        if(currentUserId != 0) {
+        if(currentUserId !== 0) {
             try {
-                fetch("http://localhost:8080/user/" + currentUserId + "/my-recipes/add-liked-recipe/" + recipeId, {
+                await fetch("http://localhost:8080/user/" + currentUserId + "/my-recipes/add-liked-recipe/" + recipeId, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -477,7 +564,7 @@ function heartImageEventListener(heartImage) {
         }
     } else {
         try {
-            fetch("http://localhost:8080/user/" + currentUserId + "/my-recipes/remove-liked-recipe/" + recipeId, {
+            await fetch("http://localhost:8080/user/" + currentUserId + "/my-recipes/remove-liked-recipe/" + recipeId, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -504,7 +591,7 @@ async function registerFormSubmitEventListener(registerLoginPopUp, registerFormU
             if (/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(registerFormEmail.value) && registerFormUsername.value.trim() != "" && registerFormFirstName.value.trim() != ""
                     && registerFormLastName.value.trim() != "" && registerFormPassword.value.trim() != "") {
 
-                fetch("http://localhost:8080/users")
+                await fetch("http://localhost:8080/users")
                 .then(res => res.json())
                 .then(data => {
                     for(let i = 0; i < data.length; i++) {
@@ -562,7 +649,7 @@ async function registerFormSubmitEventListener(registerLoginPopUp, registerFormU
         }
     }
 
-async function createMyRecipes() {
+function createMyRecipes() {
 
     let myRecipesBtn = document.createElement("button");
     myRecipesBtn.id = "myRecipesBtn";
@@ -570,7 +657,6 @@ async function createMyRecipes() {
     myRecipesBtn.type = "button";
     myRecipesBtnConatainer.appendChild(myRecipesBtn);
     registerLoginContainer.appendChild(myRecipesBtnConatainer);
-    
     myRecipesBtn.addEventListener("click", () => myRecipesBtnEventListener());
 }
 
@@ -578,7 +664,6 @@ async function myRecipesBtnEventListener() {
     
     contentContainer.innerHTML = "";
     currentUserId = localStorage.getItem("current_user");
-
     let myRecipesHeaderContainer = document.createElement("div");
     let myRecipesHeader = document.createElement("h2");
     myRecipesHeader.innerText = "My Recipes";
@@ -589,7 +674,6 @@ async function myRecipesBtnEventListener() {
     addNewRecipeContainer.appendChild(addNewRecipeBtn);
     let event = -1;
     addNewRecipeBtn.addEventListener("click", () => addNewRecipeBtnEventListener(event));
-
     let myRecipesContainer = document.createElement("div");
 
     await fetch ("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes")
@@ -609,9 +693,8 @@ async function myRecipesBtnEventListener() {
                 singleRecipeContainer.style.padding = "1%"
                 let singleRecipeHeader = document.createElement("h3");
                 singleRecipeHeader.innerText = recipe.recipeName;
-                
                 let ingredientUl = document.createElement("ul");
-                console.log(recipe.ingredients.length);
+
                 for(let i = 0; i < recipe.ingredients.length; i++) {
                     let li = document.createElement("li");
                     li.innerText = recipe.ingredients[i];
@@ -627,7 +710,6 @@ async function myRecipesBtnEventListener() {
                 recipeEditBtn.innerText = "Edit Recipe";
                 recipeEditBtn.id = recipe.userRecipeId;
                 let event = recipe.userRecipeId;
-                console.log("edit: " + event)
                 recipeEditBtn.addEventListener("click", () => addNewRecipeBtnEventListener(event, recipe.recipeName, recipe.recipeMethod));
 
                 let deleteRecipeBtn = document.createElement("button");
@@ -644,7 +726,7 @@ async function myRecipesBtnEventListener() {
 
     let divider = document.createElement("div");
     divider.style.width = "100vw";
-    divider.style.height = "20px";
+    divider.style.height = "5px";
     divider.style.backgroundColor = "black";
 
     let likedRecipesContainer = document.createElement("div");
@@ -652,7 +734,7 @@ async function myRecipesBtnEventListener() {
     likedRecipesHeader.innerText = "My Liked Recipes";
     let likedRecipesList = document.createElement("ul");
 
-    fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/liked-recipes")
+    await fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/liked-recipes")
     .then(res => res.json())
     .then(data => {
         if (data.length == 0) {
@@ -688,9 +770,8 @@ async function myRecipesBtnEventListener() {
                     recipeImage.id = data1.meals[0].idMeal; 
                     recipeImages.push(recipeImage);
                     recipeImageContainer.appendChild(recipeImage);
-                    console.log(recipeName);
                     let alreadyLiked = true;
-                    li.addEventListener("click", () => toMeal(alreadyLiked, recipeName, recipeImage, data1, localStorage.getItem("current_user")))
+                    li.addEventListener("click", () => toMeal(alreadyLiked, recipeName, recipeImage, data1, localStorage.getItem("current_user")));
                 })
             
             })
@@ -741,7 +822,6 @@ function addNewRecipeBtnEventListener(event, recipeName, method) {
     if (event != -1) {
         newRecipeFormName.value = recipeName;
         newRecipeMethod.value = method;
-        console.log("now!!");
     }
     let submitRecipeBtn = document.createElement("button");
     submitRecipeBtn.type = "button";
@@ -752,7 +832,6 @@ function addNewRecipeBtnEventListener(event, recipeName, method) {
     cancelBtn.innerText = "Cancel";
     cancelBtn.addEventListener("click", () => cancelBtnEventListener())
 
-    
     newRecipeForm.append(newRecipeFormName, ingredientsLabel, ingredientDiv, newIngredientBtn, newRecipeMethod, submitRecipeBtn, cancelBtn);
     recipeDialog.appendChild(newRecipeForm);
     recipeDialog.setAttribute("open", true);
@@ -763,7 +842,13 @@ function addNewRecipeBtnEventListener(event, recipeName, method) {
 
 function newIngredientBtnEventListener(ingredientDiv) {
     
-    count = localStorage.getItem("count");
+    let count;
+
+    if (localStorage.getItem("count")) {
+        count = localStorage.getItem("count");
+    } else {
+        localStorage.setItem("count", 0);
+    }   
 
     if (count < 10) {
         let newRecipeIngredient = document.createElement("input");
@@ -772,23 +857,19 @@ function newIngredientBtnEventListener(ingredientDiv) {
         ingredientDiv.appendChild(newRecipeIngredient);
         let newCount = parseInt(count) + 1;
         localStorage.setItem("count", newCount);
-        console.log(newCount);
     } else {
         alert("Only 10 ingredients allowed.")
     }
 }
 
-function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeMethod) {
+async function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeMethod) {
     
-    console.log(event + "!!!!")
     if (event == -1) {
         if (newRecipeFormName.value.trim() != "" && newRecipeMethod.value.trim() != "") {
             let ingredients = document.getElementsByName("ingredient");
             let ingredientsArray = Array.from(ingredients).map(ing => ing.value.trim()).filter(value => value != "");
     
-            console.log("here!!!!");
-    
-            fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/add-recipe", {
+            await fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/add-recipe", {
                 method: "POST",
                 headers: {
                     "Content-Type" : "application/json"
@@ -802,7 +883,7 @@ function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeMethod)
             })
             .then(res => res.json())
             .then(data => {
-                console.log("new recipe");
+                console.log(data);
                 contentContainer.innerHTML = "";
             })       
         }
@@ -811,7 +892,7 @@ function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeMethod)
             let ingredients = document.getElementsByName("ingredient");
             let ingredientsArray = Array.from(ingredients).map(ing => ing.value.trim()).filter(value => value != "");
     
-            fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/" + event + "/edit-recipe", {
+            await fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/" + event + "/edit-recipe", {
                 method: "PATCH",
                 headers: {
                     "Content-Type" : "application/json"
@@ -825,7 +906,7 @@ function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeMethod)
             })
             .then(res => res.json())
             .then(data => {
-                console.log("edit recipe");
+                console.log(data);
             })       
         }   
     }
@@ -841,13 +922,11 @@ function submitRecipeBtnEventListener(event, newRecipeFormName, newRecipeMethod)
     myRecipesBtnEventListener();
 }
 
-function deleteRecipeBtnEventListener(deleteRecipeBtnid) {
-    console.log("click delete");
+async function deleteRecipeBtnEventListener(deleteRecipeBtnid) {
 
     let confirmation = window.confirm("Are you sure?");
     if(confirmation) {
-        console.log("OK");
-        fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/" + deleteRecipeBtnid.replace(/\D/g, "") + "/delete-recipe", {
+        await fetch("http://localhost:8080/user/" + localStorage.getItem("current_user") + "/my-recipes/" + deleteRecipeBtnid.replace(/\D/g, "") + "/delete-recipe", {
             method: "DELETE",
             headers: {
                 "Content-Type" : "application/json"
@@ -864,13 +943,10 @@ function deleteRecipeBtnEventListener(deleteRecipeBtnid) {
             myRecipesBtnConatainer.innerHTML = "";
             alert(data)
         })
-    } else {
-        console.log("cancel");
     }
 }
 
 function cancelBtnEventListener() {
-    console.log("click");
     recipeDialog.removeAttribute("open");
     registerLoginPopUp.removeAttribute("open");
 }
